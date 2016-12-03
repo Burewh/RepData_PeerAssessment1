@@ -1,25 +1,88 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "Activity Monitoring"
+author: "Biruk H. Sahle"
+date: "December 2, 2016"
+output: html_document
 ---
+##Loading and preprocessing the data
 
+``` {r, echo = TRUE}
+Activity <- read.csv("Activity.csv")
+Activity$steps <- as.numeric(Activity$steps)
+```
 
-## Loading and preprocessing the data
+##What is mean total number of steps taken per day?
 
+```{r, echo = TRUE}
+Totalsteps<- aggregate(steps~date, Activity, sum, rm.na = TRUE)
+Totalsteps$date <- as.Date(Totalsteps$date)
+library(scales)
+library(ggplot2)
+ggplot(aes(x=date, y=steps), data = Totalsteps) + geom_bar(stat = 'identity', position = 'dodge') + scale_x_date(date_breaks = '5 days') + theme(axis.text.x = element_text(angle = 90, vjust = 0.5)) + xlab("Date") + ylab("Total number of steps per day")
+summary(Totalsteps$steps)    
+```
 
-
-## What is mean total number of steps taken per day?
-
-
+The mean and median of the total number of steps taken per day is **10770** steps. 
 
 ## What is the average daily activity pattern?
 
-
+```{r, echo= TRUE}
+Totalstepsinterval <- read.csv("Activity.csv")
+Totalstepsinterval$steps <- as.numeric(Totalstepsinterval$steps)
+Totalstepsinterval <- aggregate(steps~interval, Totalstepsinterval, mean, na.rm = TRUE)
+plot(Totalstepsinterval$interval, Totalstepsinterval$steps, type = "l", xlab = "Interval", ylab = "Average steps")
+```
 
 ## Imputing missing values
 
 
+```{r, echo= TRUE}
+Activitymeancor <- read.csv("Activity.csv")
+Activitymeancor$steps <- as.numeric(Activitymeancor$steps)
+sum(is.na(Activitymeancor$steps))
+paste(100*sum(is.na(Activitymeancor$steps))/length(Activitymeancor$steps),"%",sep="")
+```
+
+In total there are about **2304** missing values in the data set which is about 13.12% of the total data. 
+
+``` {r, echo = TRUE}
+library(mice)
+tempData1 <- mice(Activitymeancor,m=5,maxit=50,meth='pmm',seed=500)
+Activitymeancor <- complete(tempData1,1)
+
+Totalstepscor<- aggregate(steps~date, Activitymeancor, FUN = sum, rm.na = TRUE )
+Totalstepscor$date <- as.Date(Totalstepscor$date,"%Y-%m-%d")
+library(scales)
+library(ggplot2)
+
+ggplot(aes(x=date, y=steps), data = Totalstepscor)+ geom_bar(stat = 'identity', position = 'dodge')+ scale_x_date(date_breaks = '5 days') + theme(axis.text.x = element_text(angle = 90, vjust = 0.5)) + xlab("Date") + ylab("Total number of steps per day")
+
+summary(Totalstepscor$steps) 
+
+```
+
+After imputing missing values the median (**11160**)and the mean (**11070**) of the total steps taken each day has increased by **390** and **300** steps respectively. 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+``` {r, Echo= TRUE}
+
+Activitymeancorwd <- Activitymeancor
+Activitymeancorwd$date <- as.Date(Activitymeancorwd$date,"%Y-%m-%d")
+Activitymeancorwd$dofw <- weekdays(Activitymeancorwd$date)
+Activitymeancorwd$dofw <- gsub("Monday", "Weekday", Activitymeancorwd$dofw, ignore.case = FALSE)
+Activitymeancorwd$dofw <- gsub("Tuesday", "Weekday", Activitymeancorwd$dofw, ignore.case = FALSE)
+Activitymeancorwd$dofw <- gsub("Wednesday", "Weekday", Activitymeancorwd$dofw, ignore.case = FALSE)
+Activitymeancorwd$dofw <- gsub("Thursday", "Weekday", Activitymeancorwd$dofw, ignore.case = FALSE)
+Activitymeancorwd$dofw <- gsub("Friday", "Weekday", Activitymeancorwd$dofw, ignore.case = FALSE)
+Activitymeancorwd$dofw <- gsub("Saturday", "Weekend", Activitymeancorwd$dofw, ignore.case = FALSE)
+Activitymeancorwd$dofw <- gsub("Sunday", "Weekend", Activitymeancorwd$dofw, ignore.case = FALSE)
+
+
+Totalstepscorwd <- aggregate(steps~interval+dofw, Activitymeancorwd, mean)
+
+qplot(interval, steps, data = Totalstepscorwd, facets = dofw ~., geom = "line", xlab = "Interval", ylab = "Average steps")
+```
+
+
+
