@@ -3,7 +3,6 @@ title: "Activity Monitoring"
 author: "Biruk H. Sahle"
 date: "December 2, 2016"
 output: html_document
-keep_md: true
 ---
 ##Loading and preprocessing the data
 First, Download the "Activity.csv" file form course repository and set the working directory as the floder containing the "activity.csv" file. 
