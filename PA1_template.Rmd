@@ -3,8 +3,10 @@ title: "Activity Monitoring"
 author: "Biruk H. Sahle"
 date: "December 2, 2016"
 output: html_document
+keep_md: true
 ---
 ##Loading and preprocessing the data
+First, Download the "Activity.csv" file form course repository and set the working directory as the floder containing the "activity.csv" file. 
 
 ``` {r, echo = TRUE}
 Activity <- read.csv("Activity.csv")
@@ -15,10 +17,9 @@ Activity$steps <- as.numeric(Activity$steps)
 
 ```{r, echo = TRUE}
 Totalsteps<- aggregate(steps~date, Activity, sum, rm.na = TRUE)
-Totalsteps$date <- as.Date(Totalsteps$date)
-library(scales)
-library(ggplot2)
-ggplot(aes(x=date, y=steps), data = Totalsteps) + geom_bar(stat = 'identity', position = 'dodge') + scale_x_date(date_breaks = '5 days') + theme(axis.text.x = element_text(angle = 90, vjust = 0.5)) + xlab("Date") + ylab("Total number of steps per day")
+
+hist(Totalsteps$steps, main = "Histogram of the total number of steps taken each day", xlab = "Total number of steps per day", col = "blue")
+
 summary(Totalsteps$steps)    
 ```
 
@@ -31,7 +32,12 @@ Totalstepsinterval <- read.csv("Activity.csv")
 Totalstepsinterval$steps <- as.numeric(Totalstepsinterval$steps)
 Totalstepsinterval <- aggregate(steps~interval, Totalstepsinterval, mean, na.rm = TRUE)
 plot(Totalstepsinterval$interval, Totalstepsinterval$steps, type = "l", xlab = "Interval", ylab = "Average steps")
+
+Totalstepsinterval$interval[which.max(Totalstepsinterval$steps)]
+
 ```
+
+The **835th** interval is the 5 minute interval which contains the maximum number of steps on average. 
 
 ## Imputing missing values
 
@@ -45,28 +51,27 @@ paste(100*sum(is.na(Activitymeancor$steps))/length(Activitymeancor$steps),"%",se
 
 In total there are about **2304** missing values in the data set which is about 13.12% of the total data. 
 
+The method used to impute the missings values is predictive mean matching. 
+
 ``` {r, echo = TRUE}
 library(mice)
-tempData1 <- mice(Activitymeancor,m=5,maxit=50,meth='pmm',seed=500)
+tempData1 <- mice(Activitymeancor,m=1,maxit=50,meth='pmm',seed=500)
 Activitymeancor <- complete(tempData1,1)
 
 Totalstepscor<- aggregate(steps~date, Activitymeancor, FUN = sum, rm.na = TRUE )
-Totalstepscor$date <- as.Date(Totalstepscor$date,"%Y-%m-%d")
-library(scales)
-library(ggplot2)
 
-ggplot(aes(x=date, y=steps), data = Totalstepscor)+ geom_bar(stat = 'identity', position = 'dodge')+ scale_x_date(date_breaks = '5 days') + theme(axis.text.x = element_text(angle = 90, vjust = 0.5)) + xlab("Date") + ylab("Total number of steps per day")
+hist(Totalstepscor$steps, main = "Histogram of the total number of steps taken each day", xlab = "Total number of steps per day", col = "blue", freq = TRUE)
 
 summary(Totalstepscor$steps) 
 
 ```
 
-After imputing missing values the median (**11160**)and the mean (**11070**) of the total steps taken each day has increased by **390** and **300** steps respectively. 
+After imputing missing values the median (**10600**)and the mean (**10730**) of the total steps taken each day has decreased slightly. 
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
 ``` {r, Echo= TRUE}
-
+library(ggplot2)
 Activitymeancorwd <- Activitymeancor
 Activitymeancorwd$date <- as.Date(Activitymeancorwd$date,"%Y-%m-%d")
 Activitymeancorwd$dofw <- weekdays(Activitymeancorwd$date)
